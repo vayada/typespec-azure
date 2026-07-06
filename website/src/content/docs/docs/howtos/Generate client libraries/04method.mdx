@@ -1795,6 +1795,10 @@ func (client *ContosoProviderHubClient) Get(ctx context.Context, subscriptionID 
 
 </ClientTabs>
 
+### Keeping parameter types consistent when moving to the client
+
+When you use `@clientLocation` to move a parameter **up to a client** (by targeting a namespace or interface), every operation that contributes that parameter must give it the **same type**. Moving the same-named parameter to a client with different types from different operations produces an ambiguous client parameter and a broken SDK, so TCGC reports a `client-location-conflict` warning. This most commonly happens when `@clientLocation` is applied to a templated parameter (for example, on an `alias`) that different operations instantiate with different types. In that case, apply `@clientLocation` on each operation individually so the parameter keeps a single, consistent type on the client.
+
 ## Customizing method signatures with `@override`
 
 The `@override` decorator allows you to customize method signatures in generated client SDKs. This is useful when you need to:
@@ -1815,6 +1819,27 @@ The `@override` decorator takes a target operation and a custom operation that d
 ```
 
 When applied, the method parameters come from the override operation while the underlying HTTP operation remains unchanged. TCGC maps method parameters to operation parameters based on name matching.
+
+### Parameter matching rules
+
+TCGC matches the parameters of the override operation to those of the original operation **by name**, not by position. As a result, the override operation may list parameters in a different order and may introduce additional parameters (for example, a language-specific convenience parameter) without affecting how the remaining parameters are matched. Every required parameter of the original operation must have a matching (same-name) parameter in the override; optional parameters may be omitted. If a required parameter has no match, TCGC reports an `override-parameters-mismatch` error.
+
+The override operation must also **preserve the `@path` decorator** on any parameter that is a path parameter in the original operation's route. Path parameters supply values that are interpolated into the request URL, so dropping `@path` in the override would produce a client that can no longer build a valid request. If the override removes `@path` from such a parameter, TCGC reports an `override-parameters-mismatch` error:
+
+```typespec
+@route("/items/{itemId}")
+op getItem(@path itemId: string): void;
+
+// ❌ Error: the override drops `@path` from the route path parameter `itemId`
+op getItemOverride(itemId: string): void;
+@@override(MyService.getItem, getItemOverride);
+
+// ✅ Keep `@path` on route path parameters
+op getItemOverrideFixed(@path itemId: string): void;
+@@override(MyService.getItem, getItemOverrideFixed);
+```
+
+This check is skipped when the override uses [`@clientLocation`](#using-clientlocation-to-control-parameter-placement) to relocate parameters, since in that case the parameters are intentionally being moved elsewhere.
 
 ### Simple parameter customization
 
