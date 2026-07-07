@@ -184,7 +184,7 @@ for use in documentation, resource validation, and downstream emitters.
 ### `@armResourceDelete` {#@Azure.ResourceManager.armResourceDelete}
 
 Marks the operation as a delete (DELETE) operation for a specific Azure Resource Manager resource type.
-This decorator identifies the operation as a Delete lifecycle operation over the resource for us in documentation,
+This decorator identifies the operation as a Delete lifecycle operation over the resource for use in documentation,
 resource validation, and downstream emitters.
 
 ```typespec
