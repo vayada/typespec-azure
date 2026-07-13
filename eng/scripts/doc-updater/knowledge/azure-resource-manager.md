@@ -109,3 +109,26 @@ All standard envelope properties (`EntityTagProperty`, `ExtendedLocationProperty
 - `deprecation.tsp`: The ExtensionResourceBase deprecation message must say "Foundations.ExtensionResource" (not "ProxyResource").
 - `arm-legacy-operations-discourage` rule was removed from linter registration; its rule doc file and linter.md entry should not exist.
 - Knowledge base: The reason for using `ArmCustomPatchSync` in docs is "because that is the recommendation, based on the requirements of the ARM RPC" — NOT "to avoid the suppress complexity".
+
+## Agent Base Type (Experimental)
+
+The Agent base type lives in namespace `Azure.ResourceManager.BaseTypes.Agents` (declared in `lib/base-types/agent.tsp`). Public templates/models include: `Agent<Properties>`, `AgentConversation<Properties, Parent>`, `AgentResponse<Properties, Parent>`, `AgentDefinitionAppliance`/`AgentDefinitionPlatform`, `AgentPropertiesAppliance`/`AgentPropertiesPlatform`, `ConversationProperties`, `ResponseProperties`, and the `ResponseStatus` union.
+
+It is **experimental**: using the `Agent<>` template triggers the `basetypes-experimental` diagnostic, which the canonical sample suppresses via `#suppress "@azure-tools/typespec-azure-resource-manager/basetypes-experimental" "Experimental BaseTypes"`. Because it is experimental, do **not** add narrative getting-started or how-to guides for it. It is covered adequately by the auto-generated reference docs plus the two hand-maintained rule docs (`arm-agent-base-type-child-resources`, `arm-agent-base-type-lifecycle-operations`). The canonical sample is `packages/samples/specs/resource-manager/resource-types/agent/main.tsp`.
+
+Conformance is enforced by `@azureBaseType(#{ baseType: "Agent", version: "..." })` (applied automatically by the `Agent<>` template). Per ARM guidelines, `ResponseStatus` enum values are PascalCase (`Completed`, `Failed`, `Cancelled`, `Incomplete`, `Queued`, `InProgress`) and timestamp fields (`createdAt`) use `utcDateTime`, not `unixTimestamp32`.
+
+## Soft-Deprecated Templates (doc-comment only)
+
+Some templates are deprecated only via a "DEPRECATED: Use X instead" note in their doc comment, without a `#deprecated` decorator. Doc examples should still avoid recommending them:
+
+- `ArmResourceActionNoContentAsync` → use `ArmResourceActionNoResponseContentAsync`.
+- `ArmResourceDeleteAsync` → use `ArmResourceDeleteWithoutOkAsync`.
+
+`ArmResourceActionNoContentSync` (the sync variant) is **not** deprecated. `step04.md`'s action-template table previously listed the deprecated async variant and was corrected.
+
+Note: commit history shows several `@dev` tags were intentionally removed from these deprecated templates' doc comments by library authors (so the DEPRECATED note surfaces as the description). Do not re-add `@dev` to those; treat the current source as ground truth.
+
+## Reference Docs Sync in Incremental Runs
+
+Reference docs under `libraries/azure-resource-manager/reference/` are frequently regenerated and committed together with the source PRs that change `lib/**/*.tsp`. In an incremental run, they may already be fully in sync with the checkout commit — verify before running the (expensive) `pnpm regen-docs`. Only regenerate if you actually edit a `.tsp` doc comment.
