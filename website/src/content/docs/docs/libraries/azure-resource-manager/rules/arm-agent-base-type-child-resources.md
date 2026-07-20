@@ -14,12 +14,17 @@ Resources decorated with `@azureBaseType` for the Agent base type must have both
 @armProviderNamespace
 namespace Microsoft.Contoso;
 
-model MyAgentProperties is Azure.ResourceManager.BaseTypes.Agents.AgentPropertiesPlatform {
+using Azure.ResourceManager.BaseTypes.Agents;
+
+model MyAgentDefinition is AgentDefinitionPlatform<true, true>;
+
+model MyAgentProperties is AgentPropertiesPlatform<MyAgentDefinition> {
   ...DefaultProvisioningStateProperty;
 }
 
-@azureBaseType(#{ baseType: "Agent", version: "2024-06-01" })
-model MyAgent is TrackedResource<MyAgentProperties> {
+// No Conversation or Response child resources are defined.
+#suppress "@azure-tools/typespec-azure-resource-manager/basetypes-experimental" "Experimental BaseTypes"
+model MyAgent is Agent<MyAgentProperties> {
   ...ResourceNameParameter<MyAgent>;
 }
 ```
@@ -30,21 +35,30 @@ model MyAgent is TrackedResource<MyAgentProperties> {
 @armProviderNamespace
 namespace Microsoft.Contoso;
 
-model MyAgentProperties is Azure.ResourceManager.BaseTypes.Agents.AgentPropertiesPlatform {
+using Azure.ResourceManager.BaseTypes.Agents;
+
+model MyAgentDefinition is AgentDefinitionPlatform<true, true>;
+
+model MyAgentProperties is AgentPropertiesPlatform<MyAgentDefinition> {
   ...DefaultProvisioningStateProperty;
 }
 
+#suppress "@azure-tools/typespec-azure-resource-manager/basetypes-experimental" "Experimental BaseTypes"
 model MyAgent is Agent<MyAgentProperties> {
   ...ResourceNameParameter<MyAgent>;
 }
 
-model MyConversationProperties is Azure.ResourceManager.BaseTypes.Agents.ConversationProperties;
+model MyConversationProperties is ConversationProperties {
+  ...DefaultProvisioningStateProperty;
+}
 
 model MyConversation is AgentConversation<MyConversationProperties, MyAgent> {
   ...ResourceNameParameter<MyConversation>;
 }
 
-model MyResponseProperties is Azure.ResourceManager.BaseTypes.Agents.ResponseProperties;
+model MyResponseProperties is ResponseProperties {
+  ...DefaultProvisioningStateProperty;
+}
 
 model MyResponse is AgentResponse<MyResponseProperties, MyAgent> {
   ...ResourceNameParameter<MyResponse>;

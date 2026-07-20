@@ -14,8 +14,21 @@ Conversation and Response child resources of an Agent must define create, read, 
 @armProviderNamespace
 namespace Microsoft.Contoso;
 
+using Azure.ResourceManager.BaseTypes.Agents;
+
+model MyAgentDefinition is AgentDefinitionPlatform<true, true>;
+
+model MyAgentProperties is AgentPropertiesPlatform<MyAgentDefinition> {
+  ...DefaultProvisioningStateProperty;
+}
+
+#suppress "@azure-tools/typespec-azure-resource-manager/basetypes-experimental" "Experimental BaseTypes"
 model MyAgent is Agent<MyAgentProperties> {
   ...ResourceNameParameter<MyAgent>;
+}
+
+model MyConversationProperties is ConversationProperties {
+  ...DefaultProvisioningStateProperty;
 }
 
 model MyConversation is AgentConversation<MyConversationProperties, MyAgent> {
@@ -35,8 +48,21 @@ interface Conversations {
 @armProviderNamespace
 namespace Microsoft.Contoso;
 
+using Azure.ResourceManager.BaseTypes.Agents;
+
+model MyAgentDefinition is AgentDefinitionPlatform<true, true>;
+
+model MyAgentProperties is AgentPropertiesPlatform<MyAgentDefinition> {
+  ...DefaultProvisioningStateProperty;
+}
+
+#suppress "@azure-tools/typespec-azure-resource-manager/basetypes-experimental" "Experimental BaseTypes"
 model MyAgent is Agent<MyAgentProperties> {
   ...ResourceNameParameter<MyAgent>;
+}
+
+model MyConversationProperties is ConversationProperties {
+  ...DefaultProvisioningStateProperty;
 }
 
 model MyConversation is AgentConversation<MyConversationProperties, MyAgent> {

@@ -101,6 +101,23 @@ All standard envelope properties (`EntityTagProperty`, `ExtendedLocationProperty
 
 `ResourceNameParameter` has a `NamePattern` template parameter with default value `"^[a-zA-Z0-9-]{3,24}$"`. In documentation examples, omit `NamePattern` when the value equals the default. Only show it when demonstrating a custom pattern.
 
+## Agent Base Type (experimental)
+
+A new experimental "base type" feature lives in `lib/base-types/`:
+
+- `base-types.tsp` defines `BaseTypeInfo` and the public `@azureBaseType(#{ baseType, version })` decorator, which marks an ARM resource as conforming to a named base type.
+- `base-types/agent.tsp` defines the `Azure.ResourceManager.BaseTypes.Agents` namespace with the `Agent<Properties>` tracked-resource template and the `AgentConversation<Properties, AgentResource>` / `AgentResponse<Properties, AgentResource>` proxy-child templates, plus supporting models.
+
+Key facts for documenting it:
+
+- Applying `Agent<>` or `@azureBaseType` in a **user** provider namespace (anything not under `Azure.ResourceManager`) emits the `basetypes-experimental` warning. Examples MUST add `#suppress "@azure-tools/typespec-azure-resource-manager/basetypes-experimental" "Experimental BaseTypes"` on the resource model.
+- Two **deployment models**: Appliance (`*Appliance` models, all fields read-only, service-owned) and Platform (`*Platform` models, fields writable, client-owned; `baseTypes` always read-only).
+- `AgentPropertiesAppliance<AgentDefinitionType>` and `AgentPropertiesPlatform<AgentDefinitionType>` REQUIRE a definition template argument (a model extending `AgentDefinition`). Do not use them bare.
+- `AgentDefinitionAppliance`/`AgentDefinitionPlatform` take `<HasModelDeploymentRef, HasInstructions>` boolean params controlling optional `modelDeploymentRef`/`instructions` fields (default `false`).
+- An Agent MUST have both a Conversation and a Response child (rule `arm-agent-base-type-child-resources`), and each child MUST define create/read/update/delete lifecycle ops (rule `arm-agent-base-type-lifecycle-operations`).
+- Canonical sample: `packages/samples/specs/resource-manager/resource-types/agent/main.tsp`.
+- How-to guide: `website/src/content/docs/docs/howtos/ARM/agent-base-type.md`.
+
 ## Feedback Corrections Applied
 
 - `step03.md`: Use `...ResourceNameParameter<AddressResource, KeyName = "addressName", SegmentName = "addresses">` instead of manual `@key/@segment name` fields for child resources.
