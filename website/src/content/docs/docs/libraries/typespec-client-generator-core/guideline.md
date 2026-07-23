@@ -158,6 +158,8 @@ The initialization parameter can be either [`SdkEndpointParameter`](../reference
 
 **SdkMethodParameter** is a normal client-level parameter that can be used in some of the methods belonging to the client. For type details, refer to the next section.
 
+`SdkClientType.versionsEnum` is an optional reference to the [`SdkEnumType`](../reference/js-api/interfaces/sdkenumtype/) that represents the API versions enum for the client's service. It is present when the service uses `@versioned` and allows emitters to associate a client directly with its versions enum — useful for mixed api-version scenarios where different clients may have different version enums.
+
 ### Method
 
 Emitters get all methods belonging to a client with `SdkClientType.methods`. An [`SdkServiceMethod`](../reference/js-api/type-aliases/sdkservicemethod/) represents a client's method.
@@ -186,6 +188,16 @@ TCGC currently supports one kind of operation: [`SdkHttpOperation`](../reference
 `SdkHttpOperation` contains verb, path, URI template, query/header/path/cookie/body parameters, responses, and exceptions of an HTTP operation.
 
 Each parameter for an HTTP operation has a `methodParameterSegments` property to indicate the mapping of one payload parameter with the path of one or more method-level parameters or model properties. This helps emitters determine how to compose the underlying payload with the method's parameters. One body parameter can have several method-level parameter or model property mapping paths because of the implicit body parameter resolving from the TypeSpec HTTP library.
+
+HTTP operation request bodies and responses include an optional `streamMetadata` property (type [`SdkStreamMetadata`](../reference/js-api/interfaces/sdkstreammetadata/)) that is present when the body or response is a streaming type (such as `JsonlStream` or `SSEStream`). It gives emitters the stream body type, the stream model type, the payload type being streamed, and the associated content types.
+
+For server-sent event (SSE) streams, an additional `sseMetadata` property (type [`SdkSseMetadata`](../reference/js-api/interfaces/sdkssemetadata/)) is present alongside `streamMetadata`. `SdkSseMetadata.events` is a list of [`SdkSseEventMetadata`](../reference/js-api/interfaces/sdksseeventmetadata/) — one entry per event variant of the streamed `@events` union. Each entry exposes:
+
+- `eventType`: the SSE `event:` field name (taken from the named union variant; `undefined` for unnamed `message` events).
+- `isTerminalEvent`: whether the event terminates the stream (from `@terminalEvent`).
+- `isEventEnvelope`: whether the type describes an event envelope wrapping a separate `@data` payload.
+- `type` / `contentType`: the event type and its content type (the envelope when `isEventEnvelope` is `true`).
+- `payloadType` / `payloadContentType`: the payload type and its content type (same as `type` / `contentType` when `isEventEnvelope` is `false`).
 
 ### Type
 
