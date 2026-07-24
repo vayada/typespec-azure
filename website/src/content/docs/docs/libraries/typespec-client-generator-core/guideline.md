@@ -144,6 +144,8 @@ export async function $onEmit(context: EmitContext<SdkEmitterOptions>) {
 
 Emitters can get first-level clients of a client package from `SdkPackage.clients`. An [`SdkClientType`](../reference/js-api/interfaces/sdkclienttype/) represents a client in the package. Emitters can use `SdkClientType.children` to get nested sub clients, and use `SdkClientType.parent` to trace back.
 
+When a service is versioned, `SdkClientType.versionsEnum` holds a reference to the `SdkEnumType` that represents the Versions enum for the client's service namespace. This allows emitters to map from a client directly to its corresponding versions enum — useful for mixed API-version scenarios where different clients in a multi-service package have different version enums. The property is `undefined` for unversioned services.
+
 `SdkClientType.clientInitialization` tells emitters how to initialize the client. [`SdkClientInitializationType`](../reference/js-api/interfaces/sdkclientinitializationtype/) contains info about the client's initialization parameters and how the client can be initialized, controlled by the `initializedBy` flags:
 
 - `Individually` (1): The client can be instantiated directly by the user.
@@ -393,6 +395,25 @@ This ensures that types reachable only through readonly properties are not incor
    - If a segment is a method's parameter, the concatenated name is `Parameter` + parameter name in PascalCase.
    - If a segment is a model's additional property, the concatenated name is `AdditionalProperty`.
    - If a segment is a model's property, the concatenated name is the property name in PascalCase, and the property name is converted to singular if the property type is an array or dictionary.
+
+### SSE and Streaming Metadata
+
+HTTP responses and body parameters may carry optional metadata about streaming or server-sent events (SSE).
+
+**`streamMetadata`** (`SdkStreamMetadata`): Present when the body or response is a streaming payload (for example, a JSONL or `text/event-stream` body). It exposes:
+- `originalType` — the raw TypeSpec type before TCGC resolved it to a stream.
+- `streamType` — the payload model type being streamed (e.g. `Thing` from `JsonlStream<Thing>`).
+- `contentTypes` — the content types associated with this stream (e.g. `["application/jsonl"]` or `["text/event-stream"]`).
+
+**`sseMetadata`** (`SdkSseMetadata`): Present alongside `streamMetadata` when the stream is a server-sent event (`text/event-stream`) stream. It exposes:
+- `events` — an array of `SdkSseEventMetadata`, one entry per variant of the streamed `@events` union. Each entry describes a single event type:
+  - `eventType` — the SSE `event:` field name from the named union variant. `undefined` for unnamed variants (these are `message` events with no `event:` field).
+  - `isTerminalEvent` — `true` if the presence of this event terminates the stream (from `@terminalEvent`).
+  - `isEventEnvelope` — `true` if the event type is an envelope wrapping a separate `@data` payload. When `false`, `type` and `payloadType` are the same.
+  - `type` / `contentType` — the event type (envelope when `isEventEnvelope` is `true`) and its content type.
+  - `payloadType` / `payloadContentType` — the unwrapped payload type and content type.
+
+Non-SSE streams (e.g. JSONL) have `streamMetadata` but no `sseMetadata`.
 
 ### Extending the decorator allowlist (additionalDecorators)
 
