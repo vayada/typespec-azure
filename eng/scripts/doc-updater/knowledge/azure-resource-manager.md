@@ -109,3 +109,26 @@ All standard envelope properties (`EntityTagProperty`, `ExtendedLocationProperty
 - `deprecation.tsp`: The ExtensionResourceBase deprecation message must say "Foundations.ExtensionResource" (not "ProxyResource").
 - `arm-legacy-operations-discourage` rule was removed from linter registration; its rule doc file and linter.md entry should not exist.
 - Knowledge base: The reason for using `ArmCustomPatchSync` in docs is "because that is the recommendation, based on the requirements of the ARM RPC" — NOT "to avoid the suppress complexity".
+
+## Agent Base Types (Experimental)
+
+The `Azure.ResourceManager.BaseTypes.Agents` namespace (`lib/base-types/agent.tsp`) defines the experimental Agent base type feature. Key public templates/models:
+
+- `Agent<Properties>` — creates a `TrackedResource` and auto-applies `@azureBaseType(#{ baseType: BaseType.Agent, version: ... })`. Using it requires suppressing `@azure-tools/typespec-azure-resource-manager/basetypes-experimental`.
+- `AgentConversation<Properties, AgentResource>` and `AgentResponse<Properties, AgentResource>` — required proxy child resources of an Agent.
+- Definition property bags: `AgentDefinitionAppliance<HasModelDeploymentRef, HasInstructions>` and `AgentDefinitionPlatform<...>` (both default the two booleans to `false`).
+- Resource property bags: `AgentPropertiesAppliance<AgentDefinitionType>` and `AgentPropertiesPlatform<AgentDefinitionType>`.
+- `ConversationProperties`, `ResponseProperties`, `PreviousResponseProperty` (spread) are the child-resource property building blocks.
+
+Two deployment models: **Appliance** (service-owned, read-only properties) and **Platform** (client-owned, writable properties; `baseTypes` always read-only). Use the matching variant consistently for definition/properties/resource.
+
+Two new linting rules enforce this shape:
+
+- `arm-agent-base-type-child-resources` — an Agent must have both a Conversation and a Response child resource.
+- `arm-agent-base-type-lifecycle-operations` — Conversation/Response child resources must define create, read, update, and delete operations.
+
+Canonical sample: `packages/samples/specs/resource-manager/resource-types/agent/main.tsp`. A how-to guide lives at `website/src/content/docs/docs/howtos/ARM/agent-base-types.md`.
+
+## Environment Limitation: regen-docs Requires Build + Network
+
+The doc-updater sandbox may lack `pnpm`, a network connection, and a built ARM package (`dist/`), and `tspd` may be absent from `node_modules/.bin`. In that case `pnpm regen-docs` cannot run, so **reference docs under `reference/` cannot be regenerated**. When this happens, restrict edits to hand-maintained docs (getstarted, howtos) and the knowledge base, and avoid `.tsp` doc-comment-only edits that would leave `reference/` stale. Note this limitation in the PR description.
