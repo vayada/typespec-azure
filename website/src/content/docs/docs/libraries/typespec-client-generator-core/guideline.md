@@ -158,6 +158,8 @@ The initialization parameter can be either [`SdkEndpointParameter`](../reference
 
 **SdkMethodParameter** is a normal client-level parameter that can be used in some of the methods belonging to the client. For type details, refer to the next section.
 
+`SdkClientType.versionsEnum` exposes the [`SdkEnumType`](../reference/js-api/interfaces/sdkenumtype/) that holds the API versions of this client's service. Emitters can use it to enumerate the available API versions. It is `undefined` for unversioned services and for clients that merge multiple services (a single versions enum cannot represent more than one service).
+
 ### Method
 
 Emitters get all methods belonging to a client with `SdkClientType.methods`. An [`SdkServiceMethod`](../reference/js-api/type-aliases/sdkservicemethod/) represents a client's method.
@@ -337,6 +339,23 @@ For each response, TCGC will check the response's content. If contents from diff
 If `@responseAsBool` is on the operation's upper level method, the `404` status code is always recognized as a normal response.
 
 HTTP responses include a `serializationOptions` property that indicates how to deserialize the response body. TCGC automatically populates this from the response's content types — for example, if the response content type is `application/json`, the `json` option is set. Responses without a body have empty serialization options.
+
+### Streaming and Server-Sent Events
+
+When a body parameter or a response body is a streaming type (for example `JsonlStream` or `SSEStream`), TCGC attaches an [`SdkStreamMetadata`](../reference/js-api/interfaces/sdkstreammetadata/) via the `streamMetadata` property (on `SdkBodyParameter` and on the HTTP response). It describes the stream:
+
+- `bodyType`: the type of the property decorated with `@body` (e.g. `string`, `bytes`).
+- `originalType`: the stream model type itself (e.g. `HttpStream`, `JsonlStream`, `SSEStream`).
+- `streamType`: the payload model type being streamed (e.g. `Thing` from `JsonlStream<Thing>`).
+- `contentTypes`: the content types associated with the stream (e.g. `["application/jsonl"]`, `["text/event-stream"]`).
+
+For server-sent event streams (`text/event-stream`, modeled with `@typespec/sse` and `@typespec/events`), TCGC additionally populates an [`SdkSseMetadata`](../reference/js-api/interfaces/sdkssemetadata/) via the `sseMetadata` property, present alongside `streamMetadata`. It is `undefined` for non-event streams such as JSONL. `SdkSseMetadata.events` holds one [`SdkSseEventMetadata`](../reference/js-api/interfaces/sdksseeventmetadata/) per variant of the streamed `@events` union, giving emitters everything needed to (de)serialize each event:
+
+- `eventType`: the SSE `event:` field name, taken from the named union variant. `undefined` for unnamed variants, which are `message` events with no `event:` field.
+- `isTerminalEvent`: whether receiving this event terminates the stream (from `@terminalEvent`) and the client should disconnect.
+- `isEventEnvelope`: whether `type` describes an event envelope wrapping a separate `@data` payload. When `false`, `type`/`payloadType` (and their content types) are the same.
+- `type` / `contentType`: the event type and its content type (the envelope when `isEventEnvelope` is `true`).
+- `payloadType` / `payloadContentType`: the event payload type and its content type (matches `type`/`contentType` when `isEventEnvelope` is `false`).
 
 ### Type Detection
 
