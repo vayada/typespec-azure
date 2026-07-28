@@ -158,6 +158,8 @@ The initialization parameter can be either [`SdkEndpointParameter`](../reference
 
 **SdkMethodParameter** is a normal client-level parameter that can be used in some of the methods belonging to the client. For type details, refer to the next section.
 
+`SdkClientType.apiVersions` lists the API versions supported by the client. For versioned services, `SdkClientType.versionsEnum` holds a reference to the [`SdkEnumType`](../reference/js-api/interfaces/sdkenumtype/) that represents the service's versions enum. This lets emitters map from a client directly to its corresponding versions enum, which is useful in mixed API-version scenarios where different clients may have different version enums. `versionsEnum` is `undefined` for unversioned services and for multi-service clients that span more than one service namespace.
+
 ### Method
 
 Emitters get all methods belonging to a client with `SdkClientType.methods`. An [`SdkServiceMethod`](../reference/js-api/type-aliases/sdkservicemethod/) represents a client's method.
@@ -186,6 +188,14 @@ TCGC currently supports one kind of operation: [`SdkHttpOperation`](../reference
 `SdkHttpOperation` contains verb, path, URI template, query/header/path/cookie/body parameters, responses, and exceptions of an HTTP operation.
 
 Each parameter for an HTTP operation has a `methodParameterSegments` property to indicate the mapping of one payload parameter with the path of one or more method-level parameters or model properties. This helps emitters determine how to compose the underlying payload with the method's parameters. One body parameter can have several method-level parameter or model property mapping paths because of the implicit body parameter resolving from the TypeSpec HTTP library.
+
+**Streaming and SSE responses:**
+
+`SdkHttpOperation` body parameters and method responses expose two optional metadata fields for streaming scenarios:
+
+- `streamMetadata` ([`SdkStreamMetadata`](../reference/js-api/interfaces/sdkstreammetadata/)): Present when the body or response is a streaming type (e.g., `JsonlStream`, `SSEStream`). Contains the raw body type, the stream model type, the payload type being streamed, and the associated content types.
+
+- `sseMetadata` ([`SdkSseMetadata`](../reference/js-api/interfaces/sdkssemetadata/)): Present alongside `streamMetadata` when the stream is a server-sent event (`text/event-stream`) stream. Absent for non-event streams such as JSONL. It carries a list of [`SdkSseEventMetadata`](../reference/js-api/interfaces/sdksseeventmetadata/) entries — one per variant of the streamed `@events` union — providing each event's wire `event:` field name (`eventType`), whether the event terminates the stream (`isTerminalEvent`), whether the type is an event envelope wrapping a `@data` payload (`isEventEnvelope`), the event type, and the payload type and content types.
 
 ### Type
 
