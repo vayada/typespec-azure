@@ -1285,6 +1285,30 @@ model Config {
 }
 ```
 
+#### Diagnostics
+
+A `client-default-value-type-mismatch` warning is emitted when the type of the value passed to `@clientDefaultValue` does not match the scalar type of the target property. For example, passing a string literal to a numeric property, or a numeric literal to a string property, triggers this warning. When `@alternateType` is present, the value is validated against the alternate type instead.
+
+```typespec
+model RequestOptions {
+  // ⚠️ warning: value type "string" does not match property type "int32"
+  @Azure.ClientGenerator.Core.Legacy.clientDefaultValue("10")
+  pageSize?: int32;
+
+  // ✅ correct: value type matches property type
+  @Azure.ClientGenerator.Core.Legacy.clientDefaultValue(10)
+  timeout?: int32;
+}
+```
+
+To suppress the warning intentionally:
+
+```typespec
+#suppress "@azure-tools/typespec-client-generator-core/client-default-value-type-mismatch" "intentional mismatch"
+@Azure.ClientGenerator.Core.Legacy.clientDefaultValue("10")
+@query pageSize?: int32;
+```
+
 ### `@disablePageable` {#@Azure.ClientGenerator.Core.Legacy.disablePageable}
 
 Prevents an operation from being treated as a pageable operation by the SDK generators,
