@@ -673,6 +673,26 @@ model Config {
 </ClientTabItem>
 </ClientTabs>
 
+### Matching the Default Value Type
+
+The type of the value passed to `@clientDefaultValue` must match the type of the property or parameter it is applied to. String values require a string property, numeric values require a numeric property (`int32`, `int64`, `float32`, etc.), and boolean values require a boolean property. A mismatch (for example, `@clientDefaultValue("10")` on an `int32` property) produces a `client-default-value-type-mismatch` warning, because the mismatched default could generate incorrect SDK code.
+
+When [`@alternateType`](#using-alternatetype-to-reference-external-types) is also applied, the default value is validated against the alternate (client-facing) type instead of the original property type. This lets you change the client-facing type so the default value is valid:
+
+```typespec
+@Azure.ClientGenerator.Core.Legacy.clientDefaultValue("10")
+@Azure.ClientGenerator.Core.alternateType(string)
+@query pageSize?: int32; // no warning — the default matches the alternate type
+```
+
+If the mismatch is intentional, suppress the diagnostic. The mismatched default value is still applied to generated SDKs when suppressed:
+
+```typespec
+#suppress "@azure-tools/typespec-client-generator-core/client-default-value-type-mismatch" "intentional mismatch"
+@Azure.ClientGenerator.Core.Legacy.clientDefaultValue("10")
+@query pageSize?: int32;
+```
+
 ## Models
 
 ### Models with additional properties of any type

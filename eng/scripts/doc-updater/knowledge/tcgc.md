@@ -123,6 +123,7 @@ namespace (@clientNamespace), naming (@clientName), overload, structure (@client
 - `legacy-hierarchy-building-conflict` (warning): Now only has `property-type-mismatch` message ID (the old `property-missing` and `type-mismatch` message IDs were removed). Emitted during property reconciliation when a dropped property's type is incompatible with the same-named property on the new base chain.
 - `override-parameters-mismatch` (error): In addition to the general "different parameters definition" case, `@override` now reports this when the override operation drops a parameter that is realized as a `@path` parameter in the original operation's HTTP route, or redeclares it without `@path` (the underlying route still needs it). The check is skipped when any override parameter carries `@clientLocation` (intentional relocation). Matching between original/override parameters is by **name**, not position (so overrides may add/remove/regroup parameters). "Realized path parameter" is resolved from `getHttpOperation(...).parameters` (route ground truth), not from the `@path` decorator alone, because templated params (e.g. ARM scope models) can carry `@path` without appearing in the route. Documented in 04method.mdx `@override` section as a `:::caution`.
 - `client-location-conflict` / `parameterTypeConflict` (warning): `@clientLocation` cannot move multiple parameters that share a name but have different types to the same client. Common when `@clientLocation` is on a templated parameter instantiated with different types across operations; the client parameter collapses to a single (last) type, breaking the SDK. Fix: move the parameter on each operation instead. Validated in `src/validations/types.ts` (`validateClientLocationParameterTypes`). Documented in 04method.mdx `@clientLocation` section as a `:::caution`.
+- `client-default-value-type-mismatch` (warning): Added July 2026 (#5101). Fires from `$clientDefaultValue` (`onTargetFinish`) when the value passed to `@Azure.ClientGenerator.Core.Legacy.clientDefaultValue` isn't assignable to the property/parameter type — string default on numeric property, numeric default on string, etc. When `@alternateType` is present, the value is validated against the alternate (client-facing) type instead. Suppressible; the mismatched default still applies to SDKs when suppressed. Documented in 08types.mdx under the new "Matching the Default Value Type" heading in the Client Default Values (Legacy) section.
 
 ## External Type Usage Propagation
 
@@ -249,6 +250,11 @@ namespace (@clientNamespace), naming (@clientName), overload, structure (@client
 - Codefix helpers added in `src/rules/codefix-helpers.ts` are reusable by other rules:
   - `createAugmentDecoratorCodeFix(target, decoratorName, args?)` — appends an `@@`-augment decorator at the end of the SAME file as the target.
   - `createClientTspAugmentDecoratorCodeFix(target, decoratorName, program, args?)` — writes the augment decorator to `client.tsp` (creates imports/usings as needed, uses short refs when the namespace `using` is in scope, else FQN). Assumes `client.tsp` is imported via tspconfig.
+
+### C# naming convention rules — batch 1 (PR #4867)
+
+- Added `csharp-model-suffix` (model names should use recommended suffixes for C# SDKs — e.g. `Config` over `Options`, `Content` over `Request`, `Result` over `Response`) and `csharp-use-standard-acronyms` (`Ip`→`IP`, `Db`→`DB`, `Os`→`OS`). Both are C#-only, registered in the `csharpRules` array in `src/linter.ts`, use `getLibraryName(..., "csharp")`, and emit `@@clientName(..., "csharp")` codefixes into `client.tsp`.
+- `reference/linter.md` already lists both rows and each has its `src/rules/<name>.md` doc page — added by the rule PR itself. No further reference-doc action needed; do not duplicate.
 
 ## doc-updater Mechanics
 
