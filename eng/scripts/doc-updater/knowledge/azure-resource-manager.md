@@ -124,3 +124,18 @@ The library provides an experimental **Agent** base type in `lib/base-types/agen
 - How-to guide added: `website/src/content/docs/docs/howtos/ARM/agent-base-type.mdx`.
 - The ARM howtos sidebar is auto-generated from the directory (`current-sidebar.ts` → `autogenerate` on `howtos`), so new how-to files need no manual sidebar registration.
 - Reference docs (`reference/*.md`) for these lib additions were already regenerated in-commit; no `regen-docs` diff was needed for this batch.
+
+## Relationship Base Type (Experimental)
+
+The library provides an experimental **Relationship** base type in `lib/base-types/relationship.tsp` (namespace `Azure.ResourceManager.BaseTypes.Relationships`). Key facts:
+
+- `Relationship<Properties>` is an `ExtensionResource` template that applies `@azureBaseType(#{ baseType: BaseType.Relationship, version: "2026-04-01" })` automatically.
+- `RelationshipProperties<ProvisioningState>` supplies the required schema: `baseTypes` (ARM-managed, read-only), `sourceId`, `sourceTenant`, `targetId`, `targetTenant`, and read-only `provisioningState`.
+- Relationships are extension resources, so operations use the `Extension.*` templates (e.g. `Extension.Read`, `Extension.CreateOrReplaceAsync`, `Extension.CustomPatchAsync`, `Extension.DeleteWithoutOkAsync`, and `Extension.ListByTarget` to list by the relationship target).
+- Linting rule `use-relationship-required-properties` (registered in `src/linter.ts`): resources with the Relationship base type must be extension resources carrying the required Relationship schema.
+- Canonical sample: `packages/samples/specs/resource-manager/resource-types/relationship/main.tsp`.
+- How-to guide added: `website/src/content/docs/docs/howtos/ARM/relationship-base-type.mdx`.
+
+## Base Type Contract Version
+
+Both the Agent and Relationship base types use contract `version: "2026-04-01"` in `@azureBaseType` (updated from an earlier `2024-06-01`). Any doc example applying `@azureBaseType` directly must use `2026-04-01`. `@azureBaseType` is applied to the **resource model** (the `TrackedResource`/`ExtensionResource`), matching what the `Agent`/`Relationship` templates do — not to the bare properties bag.
