@@ -127,6 +127,13 @@ model ApplianceResponse is AgentResponse<ContosoResponseProperties, ContosoAppli
 }
 ```
 
+`ConversationProperties` and `ResponseProperties` both require an `input` property of type
+`InputItem`. `InputItem` represents a message, function call, function-call output, or compaction
+item. Its `type` property selects the variant; the other fields are optional because only the
+fields for the selected variant are populated. Message `content` and function `arguments` use
+`Record<unknown>` so the input can carry structured content. Response output uses the separate,
+read-only `ResponseItem` model and can be added with `ResponseOutputProperty`.
+
 Both child resources require a full create, read, update, and delete lifecycle. Omitting any of
 these operations triggers the
 [`arm-agent-base-type-lifecycle-operations`](/docs/libraries/azure-resource-manager/rules/arm-agent-base-type-lifecycle-operations)
@@ -152,14 +159,15 @@ interface ApplianceConversations {
 ## Applying `@azureBaseType` directly
 
 The `Agent` template applies `@azureBaseType` for you. If you need to declare base-type conformance
-on a properties model directly, apply the decorator with a `BaseTypeInfo` value. It may be applied
-multiple times to declare conformance to multiple base types; duplicate entries are ignored:
+on a resource model directly, apply the decorator with a `BaseTypeInfo` value. It may be applied
+multiple times to declare conformance to multiple base types; duplicate entries are ignored. The
+`Agent` template is preferred because it supplies the current base type and version automatically:
 
 ```typespec
-@azureBaseType(#{ baseType: "Agent", version: "2024-06-01" })
-model MyAgentProperties {
-  ...AgentPropertiesPlatform<MyDefinition>;
-  ...DefaultProvisioningStateProperty;
+#suppress "@azure-tools/typespec-azure-resource-manager/basetypes-experimental" "Experimental BaseTypes"
+@azureBaseType(#{ baseType: BaseType.Agent, version: "2026-04-01" })
+model ContosoPlatformAgent is TrackedResource<ContosoPlatformAgentProperties> {
+  ...ResourceNameParameter<ContosoPlatformAgent>;
 }
 ```
 

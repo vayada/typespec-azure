@@ -1,0 +1,103 @@
+---
+title: Relationship Base Type
+description: Defining ARM extension resources that represent relationships between resources
+---
+
+:::caution
+The Relationship base type is **experimental**. Its shape may change in future versions of the
+`@azure-tools/typespec-azure-resource-manager` library. The `Relationship` template applies
+`@azureBaseType`, which emits the `basetypes-experimental` warning in a provider namespace. Suppress
+that warning explicitly while the feature is experimental.
+:::
+
+A _Relationship_ is an ARM extension resource that describes a connection from a source resource
+to a target resource. Use `RelationshipProperties` for the required source, target, tenant, and
+provisioning-state fields, and derive the resource from `Relationship` so the library applies the
+Relationship base type and version.
+
+The following example defines a relationship that can be attached to any ARM resource scope:
+
+```typespec
+import "@typespec/rest";
+import "@typespec/versioning";
+import "@azure-tools/typespec-azure-core";
+import "@azure-tools/typespec-azure-resource-manager";
+
+using Http;
+using Rest;
+using Versioning;
+using Azure.ResourceManager;
+using Azure.ResourceManager.BaseTypes.Relationships;
+
+@armProviderNamespace
+@service(#{ title: "ContosoRelationshipsClient" })
+@versioned(Versions)
+namespace Microsoft.ContosoRelationships;
+
+enum Versions {
+  @armCommonTypesVersion(Azure.ResourceManager.CommonTypes.Versions.v5)
+  `2026-04-01`,
+}
+
+interface Operations extends Azure.ResourceManager.Operations {}
+
+model DependencyMetadata {
+  sourceType: string;
+  targetType: string;
+  description?: string;
+}
+
+model DependencyOfProperties is RelationshipProperties {
+  metadata: DependencyMetadata;
+}
+
+#suppress "@azure-tools/typespec-azure-resource-manager/basetypes-experimental" "Experimental BaseTypes"
+model DependencyOf is Relationship<DependencyOfProperties> {
+  ...ResourceNameParameter<
+    Resource = DependencyOf,
+    KeyName = "relationshipName",
+    SegmentName = "dependencyOf",
+    NamePattern = "^[a-zA-Z0-9_.-]{1,64}$"
+  >;
+}
+
+interface DependencyOfOps<Scope extends Azure.ResourceManager.Foundations.SimpleResource> {
+  get is Extension.Read<Scope, DependencyOf>;
+  create is Extension.CreateOrReplaceAsync<Scope, DependencyOf>;
+  update is Extension.CustomPatchAsync<
+    Scope,
+    DependencyOf,
+    Azure.ResourceManager.Foundations.ResourceUpdateModel<DependencyOf, DependencyOfProperties>
+  >;
+  delete is Extension.DeleteWithoutOkAsync<Scope, DependencyOf>;
+  list is Extension.ListByTarget<Scope, DependencyOf>;
+}
+
+@armResourceOperations
+interface DependencyOfRelationships extends DependencyOfOps<Extension.ScopeParameter> {}
+```
+
+`RelationshipProperties` contributes these required fields:
+
+- `sourceId` and `sourceTenant`
+- `targetId` and `targetTenant`
+- the read-only `baseTypes` descriptor
+- the read-only `provisioningState`
+
+Its `ProvisioningState` template parameter defaults to `ResourceProvisioningState`. Supply an
+extended provisioning-state union only when the relationship's asynchronous lifecycle requires
+additional states.
+
+`Extension.ScopeParameter` lets the operations target any resource identifier. For a fixed scope,
+instantiate the operation interface with a more specific extension target such as
+`Extension.Subscription`, `Extension.ResourceGroup`, or another resource model.
+
+The
+[`use-relationship-required-properties`](/docs/libraries/azure-resource-manager/rules/use-relationship-required-properties)
+rule verifies that a resource marked as the Relationship base type is an extension resource and
+contains every required relationship property. Using `Relationship<Properties>` and deriving the
+property bag from `RelationshipProperties` satisfies these constraints.
+
+For a complete specification with a custom provisioning-state union and additional relationship
+metadata, see the
+[Relationship Base Type sample](https://github.com/Azure/typespec-azure/tree/main/packages/samples/specs/resource-manager/resource-types/relationship).

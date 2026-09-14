@@ -539,14 +539,21 @@ In addition to the resource-specific property bag, a resource may configure on o
 
 ### Billing Data
 
-Billing Data provides a standard description of resource's billing state, including a reference to a product in the Marketplace Catalog. It is strongly recommended for Resource Providers with prepaid billing (where a customer is charged _before_ the product is provisioned/fulfilled) to utilize this pattern, allowing customers to interact with such resources through central experiences.
+Billing Data provides a standard description of a resource's billing state, including a reference to a product in the Marketplace Catalog. It is strongly recommended for Resource Providers with prepaid billing (where a customer is charged _before_ the product is provisioned/fulfilled) to utilize this pattern, allowing customers to interact with such resources through central experiences.
 
 ```typespec
 model Employee is TrackedResource<EmployeeProperties> {
   ...ResourceNameParameter<Employee>;
+}
+
+model EmployeeProperties {
   ...BillingDataProperty;
 }
 ```
+
+Unlike the standard envelope property spreads below, `BillingDataProperty` is spread into the
+resource-specific properties model. `BillingData` is available in ARM common-types v6, so select
+`Azure.ResourceManager.CommonTypes.Versions.v6` with `@armCommonTypesVersion` before using it.
 
 ### Managed Identity
 
