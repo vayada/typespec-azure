@@ -127,6 +127,23 @@ model ApplianceResponse is AgentResponse<ContosoResponseProperties, ContosoAppli
 }
 ```
 
+`ConversationProperties` and `ResponseProperties` each require an `input: InputItem` property.
+`InputItem.type` selects a message, function call, function call output, or compaction item. Add only
+the fields for that item type. Message `content` is an open object shape, and `role` is assigned by
+the service:
+
+```typespec
+model ContosoConversationProperties is ConversationProperties {
+  ...DefaultProvisioningStateProperty;
+}
+
+model ContosoResponseProperties is ResponseProperties {
+  ...PreviousResponseProperty;
+  ...ResponseOutputProperty;
+  ...DefaultProvisioningStateProperty;
+}
+```
+
 Both child resources require a full create, read, update, and delete lifecycle. Omitting any of
 these operations triggers the
 [`arm-agent-base-type-lifecycle-operations`](/docs/libraries/azure-resource-manager/rules/arm-agent-base-type-lifecycle-operations)
@@ -156,7 +173,7 @@ on a properties model directly, apply the decorator with a `BaseTypeInfo` value.
 multiple times to declare conformance to multiple base types; duplicate entries are ignored:
 
 ```typespec
-@azureBaseType(#{ baseType: "Agent", version: "2024-06-01" })
+@azureBaseType(#{ baseType: "Agent", version: "2026-04-01" })
 model MyAgentProperties {
   ...AgentPropertiesPlatform<MyDefinition>;
   ...DefaultProvisioningStateProperty;

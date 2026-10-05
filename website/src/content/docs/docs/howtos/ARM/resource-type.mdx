@@ -524,6 +524,30 @@ Finally, when your _rp-specific property bag_ contains an array of complex prope
 - ARM resources must be fully loaded in memory, so there are limits to the size of arrays in the properties of a resource. If your array is not strictly bounded, you should consider modeling the array property as a [child resource](#child-resource)
 - Updating the contents of arrays can be difficult, and result in data loss under simultaneous updates, especially as Json-Merge-Patch is not widely supported in ARM update operations. If users will frequently need to update the contents of arrays, you should consider modeling as a [child resource](#child-resource).
 
+## Adding Billing Data to the Resource Property Bag
+
+Billing Data provides a standard description of a resource's billing state, including a reference
+to a product in the Marketplace Catalog. Resource providers with prepaid billing, where a customer
+is charged before the product is provisioned or fulfilled, should use this pattern so customers can
+interact with those resources through central experiences.
+
+Billing Data requires common types version `v6` or later. Spread `BillingDataProperty` into the
+resource-specific property bag, not the ARM resource envelope:
+
+```typespec
+@armCommonTypesVersion(Azure.ResourceManager.CommonTypes.Versions.v6)
+namespace Microsoft.Contoso;
+
+model EmployeeProperties {
+  ...BillingDataProperty;
+  ...DefaultProvisioningStateProperty;
+}
+
+model Employee is TrackedResource<EmployeeProperties> {
+  ...ResourceNameParameter<Employee>;
+}
+```
+
 ## Adding Optional Standard Envelope Properties
 
 In addition to the resource-specific property bag, a resource may configure on or more standard ARM features through the use of standard properties in the _ARM Envelope_. Standard features configured in the envelope include:
@@ -535,18 +559,6 @@ In addition to the resource-specific property bag, a resource may configure on o
 - **ResourceKind**: A standard mechanism for specifying a type of user experience in the portal.
 - **ManagedBy**: Indicating that this resource is managed by another Azure resource.
 - **ExtendedLocation**: Enabling deployment to custom locations such as Azure Arc-connected environments.
-- **Billing Data**: A standard mechanism for specifying billing properties for prepaid resources.
-
-### Billing Data
-
-Billing Data provides a standard description of resource's billing state, including a reference to a product in the Marketplace Catalog. It is strongly recommended for Resource Providers with prepaid billing (where a customer is charged _before_ the product is provisioned/fulfilled) to utilize this pattern, allowing customers to interact with such resources through central experiences.
-
-```typespec
-model Employee is TrackedResource<EmployeeProperties> {
-  ...ResourceNameParameter<Employee>;
-  ...BillingDataProperty;
-}
-```
 
 ### Managed Identity
 
